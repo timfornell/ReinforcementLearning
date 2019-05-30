@@ -144,8 +144,9 @@ class GymEnvironment:
                 self._RL_params[key] = self._latest_action
 
     def setup_environment(self):
-        # Do something with self._env depending on parameters in self._env_params.
-        pass
+        for key, value in self._env_params.items():
+            if key == "stochastic" and value is True:
+                self.set_transition_probabilites(self._env_params["probabilities"])
 
     def plot_results(self, environment):
         if environment == "CliffWalking-v0":
@@ -173,7 +174,7 @@ class GymEnvironment:
             plt.title("Q-Learning, number of visits per state")
             plt.colorbar()
 
-            plt.figure(4)
+            plt.figure(2)
             plt.title("Q-Learning, total expected reward")
             plt.clf()
             reward_per_episode_aver = moving_average.MovingAverage(self._reward_per_episode, 10)
@@ -185,3 +186,15 @@ class GymEnvironment:
             plt.ylabel("Reward")
 
             plt.show()
+
+    def set_transition_probabilites(self, probabilities):
+        if len(probabilities) < self._env.action_space.n:
+            sys.exit("Number of actions is not the same as number of probabilities specified.")
+        elif float(sum(probabilities)) != 1.0:
+            sys.exit("Total sum of probabilities is not equal to one.")
+
+        for state in range(self._env.observation_space.n):
+            for action in range(self._env.action_space.n):
+                items = list(self._env.P[state][action][0])
+                items[0] = probabilities[action]
+                self._env.P[state][action][0] = tuple(items)

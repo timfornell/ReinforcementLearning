@@ -51,7 +51,8 @@ if __name__ == '__main__':
     a = p.parse_args()
 
     env = gym.make(a.simulation_environment)
-    env_params = {"episodes": int(a.episodes), "max_steps": int(a.max_steps)}
+    env_params = {"episodes": int(a.episodes), "max_steps": int(a.max_steps), "stochastic": False,
+                  "probabilities": [0.85, 0.05, 0.05, 0.05]}
     required_parameters = createParameterDict(a.alpha, a.gamma)
     specific_params = {"alpha": float(a.alpha), "gamma": float(a.gamma)}
     epsilon = 0.5
