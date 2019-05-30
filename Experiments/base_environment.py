@@ -1,12 +1,21 @@
+"""
+
+This file is intended to be used as a base environment for different reinforcemeant learning algorithms. It is meant to
+be resposible for performing the training, evaluating and plotting the results.
+
+"""
+
 import sys
 import gym
 import numpy as np
 import matplotlib.pyplot as plt
 
-import Experiments.MovingAverage as mov_av
+import Experiments.MovingAverage as moving_average
 
 REQUIRED_PARAMS = ["episodes", "max_steps"]
-AVAILABLE_PARAMS = ["env", "env_params", "RL_function", "RL_params", "debug", "params", "action_policy", "action_policy_params", "latest_reward", "Q", "current_state", "previous_state", "reward_per_episode", "visited_states", "latest_action"]
+AVAILABLE_PARAMS = ["env", "env_params", "RL_function", "RL_params", "debug", "params", "action_policy",
+                    "action_policy_params", "latest_reward", "Q", "current_state", "previous_state",
+                    "reward_per_episode", "visited_states", "latest_action", "policy"]
 EVALUATE = "eval"
 
 
@@ -32,6 +41,7 @@ class GymEnvironment:
         self._Q = np.zeros((env.observation_space.n, env.action_space.n))
         self._reward_per_episode = np.zeros((env_params["episodes"], 1))
         self._visited_states = np.zeros((env.observation_space.n, 1))
+        self._policy = np.zeros((env.observation_space.n, 1))
         self._previous_state = 0
         self._current_state = 0
         self._latest_reward = 0
@@ -100,7 +110,8 @@ class GymEnvironment:
         update_Q = self._RL_function(self._RL_params)
         self._Q = update_Q
 
-    # This should be implemented better, perhaps all variables should be accessible through a struct like self._available_parameters?
+    # This should be implemented better, perhaps all variables should be accessible through a struct like self.
+    # available_parameters?
     def update_RL_params(self):
         for key, value in self._RL_params.items():
             if key == "env":
@@ -136,40 +147,41 @@ class GymEnvironment:
         # Do something with self._env depending on parameters in self._env_params.
         pass
 
-    def plot_results(self):
-        Q_max = np.zeros((self._env.observation_space.n, 1))
-        Q_plot = np.zeros((self._env.observation_space.n, 1))
+    def plot_results(self, environment):
+        if environment == "CliffWalking-v0":
+            Q_max = np.zeros((self._env.observation_space.n, 1))
+            Q_plot = np.zeros((self._env.observation_space.n, 1))
 
-        for state in range(48):
-            Q_plot[state] = np.max(self._Q[state, :])
-            Q_max[state] = np.argmax(self._Q[state, :])
+            for state in range(48):
+                Q_plot[state] = np.max(self._Q[state, :])
+                Q_max[state] = np.argmax(self._Q[state, :])
 
-        fig1 = plt.figure(figsize=(6, 1))
+            fig1 = plt.figure(figsize=(6, 1))
 
-        fig1.add_subplot(3, 1, 1)
-        plt.imshow(Q_plot.reshape(4, 12))
-        plt.title("Q-Learning, State Action function")
-        plt.colorbar()
+            fig1.add_subplot(3, 1, 1)
+            plt.imshow(Q_plot.reshape(4, 12))
+            plt.title("Q-Learning, State Action function")
+            plt.colorbar()
 
-        fig1.add_subplot(3, 1, 2)
-        plt.imshow(Q_max.reshape(4, 12))
-        plt.title("Q-Learning, Policy")
-        plt.colorbar()
+            fig1.add_subplot(3, 1, 2)
+            plt.imshow(Q_max.reshape(4, 12))
+            plt.title("Q-Learning, Policy")
+            plt.colorbar()
 
-        fig1.add_subplot(3, 1, 3)
-        plt.imshow(self._visited_states.reshape(4, 12))
-        plt.title("Q-Learning, number of visits per state")
-        plt.colorbar()
+            fig1.add_subplot(3, 1, 3)
+            plt.imshow(self._visited_states.reshape(4, 12))
+            plt.title("Q-Learning, number of visits per state")
+            plt.colorbar()
 
-        plt.figure(4)
-        plt.title("Q-Learning, total expected reward")
-        plt.clf()
-        reward_per_episode_aver = mov_av.MovingAverage(self._reward_per_episode, 10)
-        plt.plot(self._reward_per_episode, alpha=0.5)
-        plt.plot(reward_per_episode_aver, alpha=0.5)
-        plt.title("Q-Learning")
-        plt.legend(["Reward", "Smoothed reward"])
-        plt.xlabel("Iterations")
-        plt.ylabel("Reward")
+            plt.figure(4)
+            plt.title("Q-Learning, total expected reward")
+            plt.clf()
+            reward_per_episode_aver = moving_average.MovingAverage(self._reward_per_episode, 10)
+            plt.plot(self._reward_per_episode, alpha=0.5)
+            plt.plot(reward_per_episode_aver, alpha=0.5)
+            plt.title("Q-Learning")
+            plt.legend(["Reward", "Smoothed reward"])
+            plt.xlabel("Iterations")
+            plt.ylabel("Reward")
 
-        plt.show()
+            plt.show()

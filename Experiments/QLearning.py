@@ -59,4 +59,4 @@ if __name__ == '__main__':
     environment = gym_env.GymEnvironment(env, env_params, QLearningAlgorithm, required_parameters, specific_params,
                                          a.action_policy, {"epsilon": epsilon}, a.debug)
     environment.train()
-    environment.plot_results()
+    environment.plot_results(a.simulation_environment)
