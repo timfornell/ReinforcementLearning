@@ -10,7 +10,7 @@ REQUIRED_PARAMS_FROM_ENVIRONMENT = ["Q", "latest_reward", "current_state", "prev
 FUNCTION_SPECIFIC_PARAMS = ["gamma", "alpha"]
 
 
-def QLearningAlgorithm(parameters):
+def ExpectedSARSA(parameters):
     for param in REQUIRED_PARAMS_FROM_ENVIRONMENT:
         if param not in parameters:
             sys.exit("Cannot perform QLearning without parameter: %s, exiting..." % param)
@@ -24,9 +24,9 @@ def QLearningAlgorithm(parameters):
     alpha = parameters["alpha"]
     gamma = parameters["gamma"]
 
-    learned_value = reward + gamma * np.max(Q_matrix[current_state, :])
-    old_value = Q_matrix[previous_state, action]
-    Q_matrix[previous_state, action] = (1 - alpha) * old_value + alpha * learned_value
+    new_action = np.argmax(Q_matrix[current_state, :])
+    learned_value = reward + gamma * np.mean(Q_matrix[current_state, :]) - Q_matrix[previous_state, action]
+    Q_matrix[previous_state, action] = Q_matrix[previous_state, action] + alpha * learned_value
 
     return Q_matrix
 
@@ -55,11 +55,9 @@ if __name__ == '__main__':
                   "probabilities": [0.85, 0.05, 0.05, 0.05]}
     required_parameters = createParameterDict(a.alpha, a.gamma)
     specific_params = {"alpha": float(a.alpha), "gamma": float(a.gamma)}
-    epsilon = 0.9
+    epsilon = 0.3
 
-    environment = gym_env.GymEnvironment(env, env_params, QLearningAlgorithm, required_parameters, specific_params,
+    environment = gym_env.GymEnvironment(env, env_params, ExpectedSARSA, required_parameters, specific_params,
                                          a.action_policy, {"epsilon": epsilon}, a.debug)
     environment.train()
     environment.plot_results(a.simulation_environment)
-    input("Start evaluation")
-    environment.evaluate()

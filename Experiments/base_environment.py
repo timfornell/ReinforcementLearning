@@ -1,12 +1,13 @@
 """
 
 This file is intended to be used as a base environment for different reinforcemeant learning algorithms. It is meant to
-be resposible for performing the training, evaluating and plotting the results.
+be resposible for performing the training, evaluating and plotting the results. 
 
 """
 
 import sys
 import gym
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -50,10 +51,7 @@ class GymEnvironment:
     def train(self):
         self.setup_environment()
 
-        if EVALUATE in self._env_params:
-            self._Q = self._env_params[EVALUATE]
-        else:
-            self._Q = np.random.uniform(0, 1, (self._env.observation_space.n, self._env.action_space.n))
+        self._Q = np.random.uniform(0, 1, (self._env.observation_space.n, self._env.action_space.n))
 
         for ep in range(self._env_params["episodes"]):
             self._current_state = self._env.reset()
@@ -68,6 +66,8 @@ class GymEnvironment:
 
                 # Run Reinforcement Learning (RL) Algorithm to update Q matrix
                 self.run_RL_function(self._latest_action, self._latest_reward)
+
+                self.update_policy()
 
                 if done:
                     break
@@ -103,6 +103,10 @@ class GymEnvironment:
         self._latest_reward = reward
 
         return done
+
+    def update_policy(self):
+        for state in range(self._env.observation_space.n):
+            self._policy[state] = np.argmax(self._Q[state, :])
 
     def run_RL_function(self, action, reward):
         self.update_RL_params()
@@ -142,6 +146,8 @@ class GymEnvironment:
                 self._RL_params[key] = self._visited_states
             elif key == "latest_action":
                 self._RL_params[key] = self._latest_action
+            elif key == "policy":
+                self.RL_params[key] = self._policy
 
     def setup_environment(self):
         for key, value in self._env_params.items():
@@ -161,31 +167,29 @@ class GymEnvironment:
 
             fig1.add_subplot(3, 1, 1)
             plt.imshow(Q_plot.reshape(4, 12))
-            plt.title("Q-Learning, State Action function")
+            plt.title("State Action function")
             plt.colorbar()
 
             fig1.add_subplot(3, 1, 2)
             plt.imshow(Q_max.reshape(4, 12))
-            plt.title("Q-Learning, Policy")
+            plt.title("Policy")
             plt.colorbar()
 
             fig1.add_subplot(3, 1, 3)
             plt.imshow(self._visited_states.reshape(4, 12))
-            plt.title("Q-Learning, number of visits per state")
+            plt.title("number of visits per state")
             plt.colorbar()
 
-            plt.figure(2)
-            plt.title("Q-Learning, total expected reward")
-            plt.clf()
-            reward_per_episode_aver = moving_average.MovingAverage(self._reward_per_episode, 10)
-            plt.plot(self._reward_per_episode, alpha=0.5)
-            plt.plot(reward_per_episode_aver, alpha=0.5)
-            plt.title("Q-Learning")
-            plt.legend(["Reward", "Smoothed reward"])
-            plt.xlabel("Iterations")
-            plt.ylabel("Reward")
-
-            plt.show()
+        plt.figure(2)
+        plt.title("total expected reward")
+        plt.clf()
+        reward_per_episode_aver = moving_average.MovingAverage(self._reward_per_episode, 10)
+        plt.plot(self._reward_per_episode, alpha=0.5)
+        plt.plot(reward_per_episode_aver, alpha=0.5)
+        plt.legend(["Reward", "Smoothed reward"])
+        plt.xlabel("Iterations")
+        plt.ylabel("Reward")
+        plt.show()
 
     def set_transition_probabilites(self, probabilities):
         if len(probabilities) < self._env.action_space.n:
@@ -198,3 +202,15 @@ class GymEnvironment:
                 items = list(self._env.P[state][action][0])
                 items[0] = probabilities[action]
                 self._env.P[state][action][0] = tuple(items)
+
+    def evaluate(self):
+        self.update_policy()
+        state = self._env.reset()
+
+        done = False
+        while not done:
+            self._env.render()
+
+            action = int(self._policy[state][0])
+            state, reward, done, info = self._env.step(action)
+            time.sleep(0.1)
