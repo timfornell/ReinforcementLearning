@@ -1,7 +1,7 @@
 """
 
 This file is intended to be used as a base environment for different reinforcemeant learning algorithms. It is meant to
-be resposible for performing the training, evaluating and plotting the results. 
+be resposible for performing the training, evaluating and plotting the results.
 
 """
 
@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 
 import Experiments.MovingAverage as moving_average
 
-REQUIRED_PARAMS = ["episodes", "max_steps"]
+AVAILABLE_ENVIRONMENT_PARAMS = ["episodes", "max_steps", "stochastic", "probabilities"]
 AVAILABLE_PARAMS = ["env", "env_params", "RL_function", "RL_params", "debug", "params", "action_policy",
                     "action_policy_params", "latest_reward", "Q", "current_state", "previous_state",
                     "reward_per_episode", "visited_states", "latest_action", "policy"]
@@ -24,8 +24,8 @@ class GymEnvironment:
 
     def __init__(self, env, env_params: dict, RL_function, RL_params: dict, specific_params: dict, action_policy: str,
                  action_policy_params: dict, debug: bool):
-        for param in REQUIRED_PARAMS:
-            if param not in env_params:
+        for param in env_params:
+            if param not in AVAILABLE_ENVIRONMENT_PARAMS:
                 sys.exit("Cannot find parameter: %s, exiting..." % param)
 
         for param in RL_params:
