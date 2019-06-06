@@ -6,15 +6,19 @@ import os
 
 import random                # Handling random number generation
 import time                  # Handling time calculation
-from skimage import transform# Help us to preprocess the frames
+from skimage import transform # Help us to preprocess the frames
 
-from collections import deque# Ordered collection with ends
+from collections import deque # Ordered collection with ends
 import matplotlib.pyplot as plt # Display graphs
+
+from StackFrames import *
+from PreProcess import *
+from DeepQNetwork import *
 
 import warnings # This ignore all the warning messages that are normally printed during the training because of skiimage
 warnings.filterwarnings('ignore')
 
-os.chdir("/Users/timfornell/Documents/GitHub/ReinforcementLearning/DeepQLearningCourse")
+os.chdir("/Users/timfornell/Documents/GitHub/ReinforcementLearning/DeepQLearningCourse/Doom")
 
 """
 Here we create our environment
@@ -66,5 +70,40 @@ def test_environment():
         print ("Result:", game.get_total_reward())
         time.sleep(2)
     game.close()
-    
-test_environment()
+
+# test_environment()
+game, possible_actions = create_environment()
+
+### MODEL HYPERPARAMETERS
+state_size = [84,84,4]      # Our input is a stack of 4 frames hence 84x84x4 (Width, height, channels) 
+action_size = game.get_available_buttons_size()              # 3 possible actions: left, right, shoot
+learning_rate =  0.0002      # Alpha (aka learning rate)
+
+### TRAINING HYPERPARAMETERS
+total_episodes = 500        # Total episodes for training
+max_steps = 100              # Max possible steps in an episode
+batch_size = 64             
+
+# Exploration parameters for epsilon greedy strategy
+explore_start = 1.0            # exploration probability at start
+explore_stop = 0.01            # minimum exploration probability 
+decay_rate = 0.0001            # exponential decay rate for exploration prob
+
+# Q learning hyperparameters
+gamma = 0.95               # Discounting rate
+
+### MEMORY HYPERPARAMETERS
+pretrain_length = batch_size   # Number of experiences stored in the Memory when initialized for the first time
+memory_size = 1000000          # Number of experiences the Memory can keep
+
+### MODIFY THIS TO FALSE IF YOU JUST WANT TO SEE THE TRAINED AGENT
+training = True
+
+## TURN THIS TO TRUE IF YOU WANT TO RENDER THE ENVIRONMENT
+episode_render = False
+
+# Reset the graph
+tf.reset_default_graph()
+
+# Instantiate the DQNetwork
+DQNetwork = DQNetwork(state_size, action_size, learning_rate)
