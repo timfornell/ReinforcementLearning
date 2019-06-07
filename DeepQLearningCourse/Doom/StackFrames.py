@@ -1,4 +1,5 @@
-from collections import deque# Ordered collection with ends
+from collections import deque # Ordered collection with ends
+from PreProcess import *
 import numpy as np
 stack_size = 4 # We stack 4 frames
 
