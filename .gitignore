@@ -1,0 +1,4 @@
+# Ignore log files and models from Doom folder
+DeepQLearningCourse/Doom/logs/
+DeepQLearningCourse/Doom/models/
+DeepQLearningCourse/Doom/__pycache__/
