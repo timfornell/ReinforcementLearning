@@ -1,4 +1,8 @@
+import os
 from vizdoom import *        # Doom Environment
+from ChangeDir import *
+
+change_dir()
 
 """
 Here we create our environment

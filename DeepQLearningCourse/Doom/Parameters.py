@@ -1,7 +1,8 @@
 import os
 from CreateEnv import *
+from ChangeDir import *
 
-os.chdir("/Users/timfornell/Documents/GitHub/ReinforcementLearning/DeepQLearningCourse/Doom")
+change_dir()
 
 game, possible_actions = create_environment()
 
