@@ -1,0 +1,13 @@
+Group Abbeel: mnih2016asynchronous.pdf
+
+Group Levine: henderson2017deep.pdf
+
+Group Peters: hasselt2015deep.pdf
+
+Group Riedmiller: schaul2015priorized.pdf
+
+Group Silver: schulman2015trust.pdf
+
+Group Sutton: lillicrap2016continuous.pdf
+
+Additional group: mahmood2018benchmarking.pdf
