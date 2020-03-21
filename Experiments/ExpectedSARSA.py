@@ -3,8 +3,8 @@ import sys
 import argparse
 import numpy as np
 
-import Experiments.BaseEnvironment as gym_env
-from Experiments.createParameterDict import createParameterDict
+import BaseEnvironment as gym_env
+from createParameterDict import createParameterDict
 
 REQUIRED_PARAMS_FROM_ENVIRONMENT = ["Q", "latest_reward", "current_state", "previous_state", "latest_action",
                                     "latest_reward"]

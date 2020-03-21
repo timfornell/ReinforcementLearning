@@ -11,7 +11,7 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 
-import Experiments.MovingAverage as moving_average
+import MovingAverage as moving_average
 
 AVAILABLE_ENVIRONMENT_PARAMS = ["episodes", "max_steps", "stochastic", "probabilities"]
 AVAILABLE_PARAMS = ["env", "env_params", "RL_function", "RL_params", "debug", "params", "action_policy",
@@ -54,6 +54,7 @@ class GymEnvironment:
         self._Q = np.random.uniform(0, 1, (self._env.observation_space.n, self._env.action_space.n))
 
         for ep in range(self._env_params["episodes"]):
+            print("Training episode %d" % ep)
             self._current_state = self._env.reset()
             self._visited_states[self._current_state] += 1
 
@@ -204,13 +205,24 @@ class GymEnvironment:
                 self._env.P[state][action][0] = tuple(items)
 
     def evaluate(self):
+        step = 1
         self.update_policy()
         state = self._env.reset()
 
         done = False
+        previous_state = None
         while not done:
+            print("=========\n Step %d\n=========" % step)
             self._env.render()
 
             action = int(self._policy[state][0])
             state, reward, done, info = self._env.step(action)
+
+            if previous_state == state:
+                print("Something went wrong, state did not change")
+                break
+            else:
+                previous_state = state
+
+            step += 1
             time.sleep(0.1)

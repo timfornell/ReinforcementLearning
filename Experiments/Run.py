@@ -1,15 +1,15 @@
 import gym
-from Experiments import SARSA, QLearning, ExpectedSARSA, createParameterDict, BaseEnvironment
+import SARSA, QLearning, ExpectedSARSA, createParameterDict, BaseEnvironment
 
 """ 
 *******************************************************
                       QLearning
 *******************************************************
 """
-# Cliffwalker-v0
+# CliffWalking-v0
 run = False
 if run is True:
-    simulation_environment = "Cliffwalker-v0"
+    simulation_environment = "CliffWalking-v0"
     episodes = 1000
     max_steps = 100
     debug = False
@@ -27,8 +27,8 @@ if run is True:
     required_params = createParameterDict.createParameterDict(QLearning.REQUIRED_PARAMS_FROM_ENVIRONMENT)
 
     gym_environment = BaseEnvironment.GymEnvironment(env, env_params, QLearning.QLearningAlgorithm, 
-                                                    required_params, function_specific_params, action_policy,
-                                                    action_policy_params, debug)
+                                                     required_params, function_specific_params, action_policy,
+                                                     action_policy_params, debug)
 
     gym_environment.train()
     input("Training finished, press enter to start evaluation and plot results.")
@@ -40,10 +40,10 @@ if run is True:
                         SARSA
 *******************************************************
 """
-# Cliffwalker-v0
+# CliffWalking-v0
 run = False
 if run is True:
-    simulation_environment = "Cliffwalker-v0"
+    simulation_environment = "CliffWalking-v0"
     episodes = 1000
     max_steps = 100
     debug = False
@@ -74,18 +74,18 @@ if run is True:
                     Expected SARSA
 *******************************************************
 """
-# Cliffwalker-v0
-run = False
+# CliffWalking-v0
+run = True
 if run is True:
-    simulation_environment = "Cliffwalker-v0"
+    simulation_environment = "CliffWalking-v0"
     episodes = 1000
     max_steps = 100
     debug = False
 
-    action_policy = "epsilon_greedy"
-    epsilon = 0.5
-    alpha = 0.5
-    gamma = 0.3
+    action_policy = "epsilon_greedy_update"
+    epsilon = 0.8
+    alpha = 0.8
+    gamma = 0.9
 
     env = gym.make(simulation_environment)
     env_params = {"episodes": episodes, "max_steps": max_steps, "stochastic": False}
