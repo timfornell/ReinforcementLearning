@@ -15,50 +15,37 @@ import matplotlib.pyplot as plt
 import MovingAverage as moving_average
 
 AVAILABLE_ENVIRONMENT_PARAMS = ["episodes", "max_steps", "stochastic", "probabilities"]
-AVAILABLE_PARAMS = ["env", "env_params", "RL_function", "RL_params", "debug", "params", "action_policy",
-                    "action_policy_params", "latest_reward", "Q", "current_state", "previous_state",
-                    "reward_per_episode", "visited_states", "latest_action", "policy"]
 EVALUATE = "eval"
 
 
 class GymEnvironment:
 
-    def __init__(self, env, env_params: dict, RL_function, RL_params: dict, specific_params: dict, action_policy: str,
-                 action_policy_params: dict, debug: bool):
+    def __init__(self, env, env_params: dict, RL_class_object, action_policy: str, action_policy_params: dict, debug: bool):
         for param in env_params:
             if param not in AVAILABLE_ENVIRONMENT_PARAMS:
                 sys.exit("Cannot find parameter: %s, exiting..." % param)
 
-        for param in RL_params:
-            if param not in AVAILABLE_PARAMS:
-                sys.exit("Parameter %s is not an available parameter to read, exiting..." % param)
-
         self._env = env
         self._env_params = env_params
-        self._RL_function = RL_function
-        self._RL_params = {**RL_params, **specific_params}
+        self._RL_class_object = RL_class_object
         self._debug = debug
         self._action_policy = action_policy
         self._action_policy_params = action_policy_params
-        self._Q = np.zeros((env.observation_space.n, env.action_space.n))
-        self._reward_per_episode = np.zeros((env_params["episodes"], 1))
-        self._visited_states = np.zeros((env.observation_space.n, 1))
-        self._policy = np.zeros((env.observation_space.n, 1))
         self._previous_state = 0
         self._current_state = 0
         self._latest_reward = 0
         self._latest_action = 0
+        self._reward_per_episode = np.zeros((env_params["episodes"], 1))
 
     def train(self):
         self.setup_environment()
 
-        # self._Q = np.random.uniform(0, 1, (self._env.observation_space.n, self._env.action_space.n))
-        self._Q = np.zeros((self._env.observation_space.n, self._env.action_space.n))
-
         for ep in range(self._env_params["episodes"]):
             print("Training episode %d" % ep)
             self._current_state = self._env.reset()
-            self._visited_states[self._current_state] += 1
+
+            # Count initial state
+            self._RL_class_object._visited_states[self._current_state] += 1
 
             num_steps = 0
             for steps in range(self._env_params["max_steps"]):
@@ -69,9 +56,9 @@ class GymEnvironment:
                 done = self.perform_action(self._latest_action, episode=ep)
 
                 # Run Reinforcement Learning (RL) Algorithm to update Q matrix
-                self.run_RL_function(self._latest_action, self._latest_reward)
+                self._RL_class_object.run_algorithm(self._latest_reward, self._latest_action, self._current_state, self._previous_state)
 
-                self.update_policy()
+                self._RL_class_object.update_policy(self._env)
 
                 num_steps += 1
                 if done:
@@ -81,15 +68,16 @@ class GymEnvironment:
 
     def get_action(self, episode):
         action = self._env.action_space.sample()
+        Q = self._RL_class_object._Q
 
         if self._action_policy == "epsilon_greedy":
             if np.random.uniform(low=0, high=1) < 1 - self._action_policy_params["epsilon"]:
-                action = np.argmax(self._Q[self._current_state, :])
+                action = np.argmax(Q[self._current_state, :])
             else:
                 action = self._env.action_space.sample()
         elif self._action_policy == "epsilon_greedy_update":
             if np.random.uniform(low=0, high=1) < 1 - self._action_policy_params["epsilon"]:
-                action = np.argmax(self._Q[self._current_state, :])
+                action = np.argmax(Q[self._current_state, :])
             else:
                 action = self._env.action_space.sample()
 
@@ -106,55 +94,9 @@ class GymEnvironment:
         self._current_state = new_state
 
         self._reward_per_episode[episode] += reward
-        self._visited_states[new_state] += 1
         self._latest_reward = reward
 
         return done
-
-    def update_policy(self):
-        for state in range(self._env.observation_space.n):
-            self._policy[state] = np.argmax(self._Q[state, :])
-
-    def run_RL_function(self, action, reward):
-        self.update_RL_params()
-
-        update_Q = self._RL_function(self._RL_params)
-        self._Q = update_Q
-
-    # This should be implemented better, perhaps all variables should be accessible through a struct like self.
-    # available_parameters?
-    def update_RL_params(self):
-        for key, value in self._RL_params.items():
-            if key == "env":
-                self._RL_params[key] = self._env
-            elif key == "env_params":
-                self._RL_params[key] = self._env_params
-            elif key == "RL_function":
-                self._RL_params[key] = self._RL_function
-            elif key == "RL_params":
-                self._RL_params[key] = self._RL_params
-            elif key == "debug":
-                self._RL_params[key] = self._debug
-            elif key == "action_policy":
-                self._RL_params[key] = self._action_policy
-            elif key == "action_policy_params":
-                self._RL_params[key] = self._action_policy_params
-            elif key == "latest_reward":
-                self._RL_params[key] = self._latest_reward
-            elif key == "Q":
-                self._RL_params[key] = self._Q
-            elif key == "current_state":
-                self._RL_params[key] = self._current_state
-            elif key == "previous_state":
-                self._RL_params[key] = self._previous_state
-            elif key == "reward_per_episode":
-                self._RL_params[key] = self._reward_per_episode
-            elif key == "visited_states":
-                self._RL_params[key] = self._visited_states
-            elif key == "latest_action":
-                self._RL_params[key] = self._latest_action
-            elif key == "policy":
-                self.RL_params[key] = self._policy
 
     def setup_environment(self):
         for key, value in self._env_params.items():
@@ -229,7 +171,7 @@ class GymEnvironment:
 
     def evaluate(self):
         step = 1
-        self.update_policy()
+        self._RL_class_object.update_policy(self._env)
         state = self._env.reset()
 
         done = False
@@ -237,7 +179,7 @@ class GymEnvironment:
             print("=========\n Step %d\n=========" % step)
             self._env.render()
 
-            action = int(self._policy[state][0])
+            action = int(self._RL_class_object.get_action_from_policy(state))
             state, reward, done, info = self._env.step(action)
 
             step += 1

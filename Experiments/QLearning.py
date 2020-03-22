@@ -6,61 +6,32 @@ import numpy as np
 import BaseEnvironment as gym_env
 from createParameterDict import createParameterDict
 
-REQUIRED_PARAMS_FROM_ENVIRONMENT = ["Q", "latest_reward", "current_state", "previous_state", "latest_action",
-                                    "latest_reward"]
-FUNCTION_SPECIFIC_PARAMS = ["gamma", "alpha"]
+class QLearning:
 
+    def __init__(self, env, variables):
+        self._alpha = variables["alpha"]
+        self._gamma = variables["gamma"]
+        self.initialize_environment_dependable_variables(env, variables)
 
-def QLearningAlgorithm(parameters):
-    for param in REQUIRED_PARAMS_FROM_ENVIRONMENT:
-        if param not in parameters:
-            sys.exit("Cannot perform QLearning without parameter: %s, exiting..." % param)
+    def run_algorithm(self, reward, action, current_state, previous_state):
+        self._visited_states[current_state] += 1
 
-    reward = parameters["latest_reward"]
-    Q_matrix = parameters["Q"]
-    current_state = parameters["current_state"]
-    previous_state = parameters["previous_state"]
-    action = parameters["latest_action"]
+        learned_value = reward + self._gamma * np.max(self._Q[current_state, :])
+        old_value = self._Q[previous_state, action]
+        self._Q[previous_state, action] = (1 - self._alpha) * old_value + self._alpha * learned_value
 
-    alpha = parameters["alpha"]
-    gamma = parameters["gamma"]
+    def initialize_environment_dependable_variables(self, env, variables):
+        if variables["qInit"] is "stochastic":
+            self._Q = np.random.uniform(0, 1, (env.observation_space.n, env.action_space.n))
+        else:
+            self._Q = np.zeros((env.observation_space.n, env.action_space.n))
 
-    learned_value = reward + gamma * np.max(Q_matrix[current_state, :])
-    old_value = Q_matrix[previous_state, action]
-    Q_matrix[previous_state, action] = (1 - alpha) * old_value + alpha * learned_value
+        self._policy = np.zeros((env.observation_space.n, 1))
+        self._visited_states = np.zeros((env.observation_space.n, 1))
 
-    return Q_matrix
+    def update_policy(self, env):
+        for state in range(env.observation_space.n):
+            self._policy[state] = np.argmax(self._Q[state, :])
 
-if __name__ == '__main__':
-    p = argparse.ArgumentParser()
-    p.add_argument("alpha", help="Factor between [0, 1] which determines the learning rate for the algorithm.")
-    p.add_argument("gamma", help="Factor between [0, 1] which determines how important future rewards are.")
-    p.add_argument("simulation_environment", help="Which environment that should be used.")
-    p.add_argument("episodes", help="Number of episodes to train for.")
-    p.add_argument("max_steps", help="Maximum number of actions to take before episode ends.")
-    p.add_argument("action_policy", help="Which action policy that should be used.")
-    p.add_argument("stochastic", help="If the probability of transitioning from a state to another should be stochastic.",
-                   action="store_true")
-    p.add_argument("--debug", help="If debug messages should be written, default=False", action="store_true")
-    a = p.parse_args()
-
-    env = gym.make(a.simulation_environment)
-    probabilities = np.zeros((env.action_space.n, 1))
-    if a.stochastic:
-        probabilities = input("Please specify the transition probability for all %d actions in the form 'p_1, p_2':\n")
-
-    env_params = {"episodes": int(a.episodes), "max_steps": int(a.max_steps), "stochastic": False,
-                  "probabilities": probabilities}
-    required_parameters = createParameterDict(REQUIRED_PARAMS_FROM_ENVIRONMENT)
-    specific_params = {"alpha": float(a.alpha), "gamma": float(a.gamma)}
-    epsilon = 0.5
-
-    if "epsilon_greedy" in a.action_policy:
-        epsilon = input("Please specify the value for epsilon: \n")
-        
-    environment = gym_env.GymEnvironment(env, env_params, QLearningAlgorithm, required_parameters, specific_params,
-                                         a.action_policy, {"epsilon": epsilon}, a.debug)
-    environment.train()
-    environment.plot_results(a.simulation_environment)
-    input("Start evaluation")
-    environment.evaluate()
+    def get_action_from_policy(self, state):
+        return self._policy[state][0]

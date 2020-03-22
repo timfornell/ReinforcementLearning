@@ -9,7 +9,7 @@ import SARSA, QLearning, ExpectedSARSA, createParameterDict, BaseEnvironment
 # CliffWalking-v0
 run = True
 if run is True:
-    # simulation_environment = "CliffWalking-v0"
+    simulation_environment = "CliffWalking-v0"
     episodes = 1000
     max_steps = 100
     debug = False
@@ -22,13 +22,12 @@ if run is True:
     env = gym.make(simulation_environment)
     env_params = {"episodes": episodes, "max_steps": max_steps, "stochastic": False}
 
-    function_specific_params = {"alpha": alpha, "gamma": gamma}
+    function_specific_params = {"alpha": alpha, "gamma": gamma, "qInit": "stochastic"}
     action_policy_params = {"epsilon": epsilon}
-    required_params = createParameterDict.createParameterDict(QLearning.REQUIRED_PARAMS_FROM_ENVIRONMENT)
+    
+    QLearning_object = QLearning.QLearning(env, function_specific_params)
 
-    gym_environment = BaseEnvironment.GymEnvironment(env, env_params, QLearning.QLearningAlgorithm, 
-                                                     required_params, function_specific_params, action_policy,
-                                                     action_policy_params, debug)
+    gym_environment = BaseEnvironment.GymEnvironment(env, env_params, QLearning_object, action_policy, action_policy_params, debug)
 
     gym_environment.train()
     input("Training finished, press enter to start evaluation and plot results.")
