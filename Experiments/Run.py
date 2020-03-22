@@ -7,9 +7,9 @@ import SARSA, QLearning, ExpectedSARSA, createParameterDict, BaseEnvironment
 *******************************************************
 """
 # CliffWalking-v0
-run = False
+run = True
 if run is True:
-    simulation_environment = "CliffWalking-v0"
+    # simulation_environment = "CliffWalking-v0"
     episodes = 1000
     max_steps = 100
     debug = False
@@ -33,7 +33,7 @@ if run is True:
     gym_environment.train()
     input("Training finished, press enter to start evaluation and plot results.")
     gym_environment.evaluate()
-    gym_environment.plot_results(simulation_environment)                            
+    gym_environment.plot_results(simulation_environment)
 
 """ 
 *******************************************************
@@ -75,7 +75,7 @@ if run is True:
 *******************************************************
 """
 # CliffWalking-v0
-run = True
+run = False
 if run is True:
     simulation_environment = "CliffWalking-v0"
     episodes = 1000
