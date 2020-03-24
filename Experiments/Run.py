@@ -1,5 +1,9 @@
 import gym
+import colorama
 import SARSA, QLearning, ExpectedSARSA, createParameterDict, BaseEnvironment
+
+# DO NOT REMOVE - Is needed to print lovely colors in bash
+colorama.init()
 
 """ 
 *******************************************************
@@ -7,7 +11,7 @@ import SARSA, QLearning, ExpectedSARSA, createParameterDict, BaseEnvironment
 *******************************************************
 """
 # CliffWalking-v0
-run = True
+run = False
 if run is True:
     simulation_environment = "CliffWalking-v0"
     episodes = 1000
@@ -32,6 +36,33 @@ if run is True:
     gym_environment.train()
     input("Training finished, press enter to start evaluation and plot results.")
     gym_environment.evaluate()
+    gym_environment.plot_results(simulation_environment)
+
+# Taxi-v3
+run = False
+if run is True:
+    simulation_environment = "Taxi-v3"
+    episodes = 1000
+    max_steps = 200
+    debug = False
+
+    action_policy = "epsilon_greedy"
+    epsilon = 0.9
+    alpha = 0.5
+    gamma = 0.3
+
+    env = gym.make(simulation_environment)
+    env_params = {"episodes": episodes, "max_steps": max_steps, "stochastic": False}
+
+    function_specific_params = {"alpha": alpha, "gamma": gamma, "qInit": "stochastic"}
+    action_policy_params = {"epsilon": epsilon}
+    
+    QLearning_object = QLearning.QLearning(env, function_specific_params)
+
+    gym_environment = BaseEnvironment.GymEnvironment(env, env_params, QLearning_object, action_policy, action_policy_params, debug)
+
+    gym_environment.train()
+    gym_environment.evaluate(simulation_environment)
     gym_environment.plot_results(simulation_environment)
 
 """ 

@@ -9,13 +9,16 @@ import sys
 import gym
 import time
 import pprint
+import json
 import numpy as np
 import matplotlib.pyplot as plt
+from pathlib import Path
 
 import MovingAverage as moving_average
 
 AVAILABLE_ENVIRONMENT_PARAMS = ["episodes", "max_steps", "stochastic", "probabilities"]
 EVALUATE = "eval"
+AVAILABLE_ENVIRONMENTS_TO_PLOT = ["CliffWalking-v0", "FrozenLake-v0"]
 
 
 class GymEnvironment:
@@ -65,6 +68,8 @@ class GymEnvironment:
                     break
             
             print("Episode %d ended after %d steps with reward %d" % (ep, num_steps, self._reward_per_episode[ep]))
+
+        self.save_data(self._env.spec.id)
 
     def get_action(self, episode):
         action = self._env.action_space.sample()
@@ -117,34 +122,73 @@ class GymEnvironment:
 
         Q_max = np.zeros((self._env.observation_space.n, 1))
         Q_plot = np.zeros((self._env.observation_space.n, 1))
+        Q = self._RL_class_object._Q
+        policy = self._RL_class_object._policy
 
-        for state in range(0, np.size(self._policy)):
-            Q_plot[state] = np.max(self._Q[state, :])
-            Q_max[state] = np.argmax(self._Q[state, :])
+        for state in range(0, np.size(policy)):
+            Q_plot[state] = np.max(Q[state, :])
+            Q_max[state] = np.argmax(Q[state, :])
 
-        states_reshaped = self._visited_states.reshape(reshape_x, reshape_y)
+        states_reshaped = self._RL_class_object._visited_states.reshape(reshape_x, reshape_y)
         
         return Q_max.reshape(reshape_x, reshape_y), Q_plot.reshape(reshape_x, reshape_y), states_reshaped
 
+    def save_data(self, environment):
+        try:
+            print("Saving data...")
+            dataFolder = Path.joinpath(Path.cwd(), Path("TrainingData"))
+            if not Path.exists(dataFolder):
+                Path.mkdir(dataFolder)
+
+            data = self._RL_class_object.get_data_to_save(environment)
+            data["reward"] = self._reward_per_episode
+
+            with open("{}\\{}_{}.json".format(str(dataFolder), environment, "env_params"), "w") as f:
+                json.dump(self._env_params, f)
+
+            for key in data.keys():
+                filename = "{}\\{}_{}.csv".format(str(dataFolder), environment, key)
+                np.savetxt(filename, data[key], delimiter=",")
+
+            print("Data sucessfully saved!")
+        except:
+            print("Something went wrong when saving data...")
+
+    def read_data(self, environment):
+        try:
+            data = {}
+            dataFolder = Path.joinpath(Path.cwd(), Path("TrainingData"))
+            with open("{}\\{}_{}.json".format(str(dataFolder), environment, "env_params"), "r") as f:
+                data["env_params"] = json.load(f)
+            
+            for key in ["reward", "Q", "policy", "visited_states"]:
+                filename = "{}\\{}_{}.csv".format(str(dataFolder), environment, key)
+                data[key] = np.loadtxt(filename, delimiter=",")
+
+            return data
+        except:
+            sys.exit("Could not load data from file {}.txt".format(environment))
+
     def plot_results(self, environment):
-        Q_max, Q_plot, states_reshaped = self.get_plot_data(environment)
+        if environment in AVAILABLE_ENVIRONMENTS_TO_PLOT:
+            Q_max, Q_plot, states_reshaped = self.get_plot_data(environment)
 
-        fig1 = plt.figure(figsize=(6, 1))
+            fig1 = plt.figure(figsize=(6, 1))
 
-        fig1.add_subplot(3, 1, 1)
-        plt.imshow(Q_plot)
-        plt.title("State Action function")
-        plt.colorbar()
+            fig1.add_subplot(3, 1, 1)
+            plt.imshow(Q_plot)
+            plt.title("State Action function")
+            plt.colorbar()
 
-        fig1.add_subplot(3, 1, 2)
-        plt.imshow(Q_max)
-        plt.title("Policy")
-        plt.colorbar()
+            fig1.add_subplot(3, 1, 2)
+            plt.imshow(Q_max)
+            plt.title("Policy")
+            plt.colorbar()
 
-        fig1.add_subplot(3, 1, 3)
-        plt.imshow(states_reshaped)
-        plt.title("number of visits per state")
-        plt.colorbar()
+            fig1.add_subplot(3, 1, 3)
+            plt.imshow(states_reshaped)
+            plt.title("number of visits per state")
+            plt.colorbar()
 
         plt.figure(2)
         plt.title("total expected reward")
@@ -169,7 +213,12 @@ class GymEnvironment:
                 items[0] = probabilities[action]
                 self._env.P[state][action][0] = tuple(items)
 
-    def evaluate(self):
+    def evaluate(self, file=""):
+        if file is not "":
+            data = self.read_data(self._env.spec.id) 
+            self._RL_class_object.set_variables_from_data(data)
+            self._reward_per_episode = data["reward"]
+        
         step = 1
         self._RL_class_object.update_policy(self._env)
         state = self._env.reset()
