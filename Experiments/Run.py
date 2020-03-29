@@ -11,8 +11,7 @@ colorama.init()
 *******************************************************
 """
 # CliffWalking-v0
-run = False
-if run is True:
+def QLearning_RunCliffWalking():
     simulation_environment = "CliffWalking-v0"
     episodes = 1000
     max_steps = 100
@@ -39,8 +38,7 @@ if run is True:
     gym_environment.plot_results(simulation_environment)
 
 # Taxi-v3
-run = False
-if run is True:
+def QLearning_RunTaxi():
     simulation_environment = "Taxi-v3"
     episodes = 1000
     max_steps = 200
@@ -71,8 +69,7 @@ if run is True:
 *******************************************************
 """
 # CliffWalking-v0
-run = False
-if run is True:
+def SARSA_RunCliffWalking():
     simulation_environment = "CliffWalking-v0"
     episodes = 1000
     max_steps = 100
@@ -86,18 +83,16 @@ if run is True:
     env = gym.make(simulation_environment)
     env_params = {"episodes": episodes, "max_steps": max_steps, "stochastic": False}
 
-    function_specific_params = {"alpha": alpha, "gamma": gamma}
+    function_specific_params = {"alpha": alpha, "gamma": gamma, "qInit": "stochastic"}
     action_policy_params = {"epsilon": epsilon}
-    required_params = createParameterDict.createParameterDict(SARSA.REQUIRED_PARAMS_FROM_ENVIRONMENT)
+    
+    QLearning_object = QLearning.QLearning(env, function_specific_params)
 
-    gym_environment = BaseEnvironment.GymEnvironment(env, env_params, SARSA.SARSA, 
-                                                    required_params, function_specific_params, action_policy,
-                                                    action_policy_params, debug)
+    gym_environment = BaseEnvironment.GymEnvironment(env, env_params, QLearning_object, action_policy, action_policy_params, debug)
 
     gym_environment.train()
-    input("Training finished, press enter to start evaluation and plot results.")
-    gym_environment.evaluate()
-    gym_environment.plot_results(simulation_environment)    
+    gym_environment.evaluate(simulation_environment)
+    gym_environment.plot_results(simulation_environment)  
 
 """ 
 *******************************************************
@@ -105,8 +100,7 @@ if run is True:
 *******************************************************
 """
 # CliffWalking-v0
-run = False
-if run is True:
+def ExpectedSARSA_RunCliffWalking():
     simulation_environment = "CliffWalking-v0"
     episodes = 1000
     max_steps = 100
@@ -120,15 +114,19 @@ if run is True:
     env = gym.make(simulation_environment)
     env_params = {"episodes": episodes, "max_steps": max_steps, "stochastic": False}
 
-    function_specific_params = {"alpha": alpha, "gamma": gamma}
+    function_specific_params = {"alpha": alpha, "gamma": gamma, "qInit": "stochastic"}
     action_policy_params = {"epsilon": epsilon}
-    required_params = createParameterDict.createParameterDict(ExpectedSARSA.REQUIRED_PARAMS_FROM_ENVIRONMENT)
+    
+    QLearning_object = QLearning.QLearning(env, function_specific_params)
 
-    gym_environment = BaseEnvironment.GymEnvironment(env, env_params, ExpectedSARSA.ExpectedSARSA, 
-                                                    required_params, function_specific_params, action_policy,
-                                                    action_policy_params, debug)
+    gym_environment = BaseEnvironment.GymEnvironment(env, env_params, QLearning_object, action_policy, action_policy_params, debug)
 
     gym_environment.train()
-    input("Training finished, press enter to start evaluation and plot results.")
-    gym_environment.evaluate()
+    gym_environment.evaluate(simulation_environment)
     gym_environment.plot_results(simulation_environment)
+
+
+# QLearning_RunCliffWalking()
+# QLearning_RunTaxi()
+# SARSA_RunCliffWalking()
+# ExpectedSARSA_RunCliffWalking()
