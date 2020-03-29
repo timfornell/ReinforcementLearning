@@ -2,16 +2,16 @@ import gym
 import sys
 import argparse
 import numpy as np
-
 import BaseEnvironment as gym_env
-from createParameterDict import createParameterDict
+
+from discretisizeEnvironments import CONTINUOUS_ENVIRONMENTS
 
 class ExpectedSARSA:
 
-    def __init__(self, env, variables):
-        self._alpha = variables["alpha"]
-        self._gamma = variables["gamma"]
-        self.initialize_environment_dependable_variables(env, variables)
+    def __init__(self, env, function_params):
+        self._alpha = function_params["alpha"]
+        self._gamma = function_params["gamma"]
+        self.initialize_environment_dependable_variables(env, function_params)
 
     def run_algorithm(self, reward, action, current_state, previous_state):
         self._visited_states[current_state] += 1
@@ -19,8 +19,8 @@ class ExpectedSARSA:
         learned_value = reward + self._gamma * np.mean(self._Q[current_state, :]) - self._Q[previous_state, action]
         self._Q[previous_state, action] = self._Q[previous_state, action] + self._alpha * learned_value
 
-    def initialize_environment_dependable_variables(self, env, variables):
-        if variables["qInit"] is "stochastic":
+    def initialize_environment_dependable_variables(self, env, function_params):
+        if function_params["qInit"] is "stochastic":
             self._Q = np.random.uniform(0, 1, (env.observation_space.n, env.action_space.n))
         else:
             self._Q = np.zeros((env.observation_space.n, env.action_space.n))

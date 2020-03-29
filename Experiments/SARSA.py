@@ -2,26 +2,26 @@ import gym
 import sys
 import argparse
 import numpy as np
-
 import BaseEnvironment as gym_env
-from createParameterDict import createParameterDict
 
-class ExpectedSARSA:
+from discretisizeEnvironments import CONTINUOUS_ENVIRONMENTS
 
-    def __init__(self, env, variables):
-        self._alpha = variables["alpha"]
-        self._gamma = variables["gamma"]
-        self.initialize_environment_dependable_variables(env, variables)
+class SARSA:
+
+    def __init__(self, env, function_params):
+        self._alpha = function_params["alpha"]
+        self._gamma = function_params["gamma"]
+        self.initialize_environment_dependable_variables(env, function_params)
 
     def run_algorithm(self, reward, action, current_state, previous_state):
         self._visited_states[current_state] += 1
 
-        new_action = np.argmax(Q_matrix[current_state, :])
-        learned_value = reward + gamma * Q_matrix[current_state, new_action] - Q_matrix[previous_state, action]
-        Q_matrix[previous_state, action] = Q_matrix[previous_state, action] + alpha * learned_value
+        new_action = np.argmax(self._Q[current_state, :])
+        learned_value = reward + self._gamma * self._Q[current_state, new_action] - self._Q[previous_state, action]
+        self._Q[previous_state, action] = self._Q[previous_state, action] + self._alpha * learned_value
 
-    def initialize_environment_dependable_variables(self, env, variables):
-        if variables["qInit"] is "stochastic":
+    def initialize_environment_dependable_variables(self, env, function_params):
+        if function_params["qInit"] is "stochastic":
             self._Q = np.random.uniform(0, 1, (env.observation_space.n, env.action_space.n))
         else:
             self._Q = np.zeros((env.observation_space.n, env.action_space.n))

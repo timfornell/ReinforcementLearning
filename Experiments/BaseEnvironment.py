@@ -14,10 +14,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 
+from discretisizeEnvironments import *
 import MovingAverage as moving_average
 
-AVAILABLE_ENVIRONMENT_PARAMS = ["episodes", "max_steps", "stochastic", "probabilities"]
-EVALUATE = "eval"
+
+AVAILABLE_ENVIRONMENT_PARAMS = ["episodes", "max_steps", "stochastic", "probabilities", "disc_param"]
 AVAILABLE_ENVIRONMENTS_TO_PLOT = ["CliffWalking-v0", "FrozenLake-v0"]
 
 
@@ -45,7 +46,10 @@ class GymEnvironment:
 
         for ep in range(self._env_params["episodes"]):
             print("Training episode %d" % ep)
-            self._current_state = self._env.reset()
+            self._current_state = tuple(self._env.reset())
+
+            if self._continuous_environment:
+                self._current_state = tuple(convert_state_to_discrete(self._env, self._env_params, self._current_state))
 
             # Count initial state
             self._RL_class_object._visited_states[self._current_state] += 1
@@ -54,6 +58,11 @@ class GymEnvironment:
             for steps in range(self._env_params["max_steps"]):
                 # Decide which action to take
                 self._latest_action = self.get_action(episode=ep)
+
+                if self._debug:
+                    self._env.render()
+                    time.sleep(0.1)
+                    print("Step {}, Next action: {}, Reward: {}".format(steps, self._latest_action, self._reward_per_episode[ep]))
 
                 # Perform action and update state and reward variables
                 done = self.perform_action(self._latest_action, episode=ep)
@@ -77,12 +86,12 @@ class GymEnvironment:
 
         if self._action_policy == "epsilon_greedy":
             if np.random.uniform(low=0, high=1) < 1 - self._action_policy_params["epsilon"]:
-                action = np.argmax(Q[self._current_state, :])
+                action = np.argmax(Q[self._current_state])
             else:
                 action = self._env.action_space.sample()
         elif self._action_policy == "epsilon_greedy_update":
             if np.random.uniform(low=0, high=1) < 1 - self._action_policy_params["epsilon"]:
-                action = np.argmax(Q[self._current_state, :])
+                action = np.argmax(Q[self._current_state])
             else:
                 action = self._env.action_space.sample()
 
@@ -95,8 +104,11 @@ class GymEnvironment:
     def perform_action(self, action, episode):
         new_state, reward, done, info = self._env.step(action)
 
+        if self._continuous_environment:
+            new_state = convert_state_to_discrete(self._env, self._env_params, new_state)
+
         self._previous_state = self._current_state
-        self._current_state = new_state
+        self._current_state = tuple(new_state)
 
         self._reward_per_episode[episode] += reward
         self._latest_reward = reward
@@ -107,6 +119,11 @@ class GymEnvironment:
         for key, value in self._env_params.items():
             if key == "stochastic" and value is True:
                 self.set_transition_probabilites(self._env_params["probabilities"])
+
+        self._continuous_environment = False
+
+        if self._env.spec.id in CONTINUOUS_ENVIRONMENTS:
+            self._continuous_environment = True
 
     def get_plot_data(self, environment):
         reshape_x = 0
