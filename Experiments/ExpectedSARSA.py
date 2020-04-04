@@ -13,7 +13,7 @@ class ExpectedSARSA:
         self._gamma = function_params["gamma"]
         self.initialize_environment_dependable_variables(env, function_params)
 
-    def run_algorithm(self, reward, action, current_state, previous_state):
+    def run_algorithm(self, reward, action, current_state, previous_state, done):
         self._visited_states[current_state] += 1
 
         learned_value = reward + self._gamma * np.mean(self._Q[current_state, :]) - self._Q[previous_state, action]

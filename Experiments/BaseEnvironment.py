@@ -10,6 +10,7 @@ import gym
 import time
 import pprint
 import json
+import math
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
@@ -42,7 +43,7 @@ class GymEnvironment:
         self._reward_per_episode = np.zeros((env_params["episodes"], 1))
         self._continuous_environment = env_params["continuous_environment"]
     
-    def setCurrentState(self, new_state):
+    def set_current_state(self, new_state):
         if new_state is np.array:
             self._current_state = tuple(new_state)
         else:
@@ -53,24 +54,33 @@ class GymEnvironment:
 
         for ep in range(self._env_params["episodes"]):
             print("Training episode %d" % ep)
-            self.setCurrentState(self._env.reset())
-            
+
+            # Initialize state
+            init_state = self._env.reset()
             if self._discretisize_state:
-                self.setCurrentState(convert_state_to_discrete(self._env, self._env_params, self._current_state))
+                self.set_current_state(convert_state_to_discrete(self._env, self._env_params, init_state))
+            else:
+                self.set_current_state(init_state)
             
+            self._previous_state = self._current_state
+
             if self._continuous_environment:
+                self._RL_class_object.run_prerequisite(ep)
+
                 done = False
                 steps = 0
                 while not done:
-                    done = self.trainWithAlgorithm(steps, ep)
+                    done = self.train_with_algorithm(steps, ep)
                     steps += 1
+
+                self._RL_class_object.run_post_episode_updates()
             else:
                 # Count initial state
                 self._RL_class_object._visited_states[self._current_state] += 1
 
                 num_steps = 0
                 for steps in range(self._env_params["max_steps"]):
-                    done = self.trainWithAlgorithm(steps, ep)
+                    done = self.train_with_algorithm(steps, ep)
 
                     num_steps += 1
                     if done:
@@ -81,7 +91,7 @@ class GymEnvironment:
         self.save_data(self._env.spec.id)
 
 
-    def trainWithAlgorithm(self, steps, ep) -> bool:
+    def train_with_algorithm(self, steps, ep) -> bool:
         # Decide which action to take
         self._latest_action = self.get_action(episode=ep)
 
@@ -94,31 +104,37 @@ class GymEnvironment:
         done = self.perform_action(self._latest_action, episode=ep)
 
         # Run Reinforcement Learning (RL) Algorithm to update Q matrix
-        self._RL_class_object.run_algorithm(self._latest_reward, self._latest_action, self._current_state, self._previous_state)
+        self._RL_class_object.run_algorithm(self._latest_reward, self._latest_action, self._current_state, self._previous_state, done)
 
         self._RL_class_object.update_policy(self._env)
         
         return done
-                
 
-    def get_action(self, episode):
-        action = self._env.action_space.sample()
-        Q = self._RL_class_object._Q
-
-        if self._action_policy == "epsilon_greedy":
-            if np.random.uniform(low=0, high=1) < 1 - self._action_policy_params["epsilon"]:
-                action = np.argmax(Q[self._current_state])
-            else:
-                action = self._env.action_space.sample()
-        elif self._action_policy == "epsilon_greedy_update":
-            if np.random.uniform(low=0, high=1) < 1 - self._action_policy_params["epsilon"]:
-                action = np.argmax(Q[self._current_state])
-            else:
-                action = self._env.action_space.sample()
-
-            self._action_policy_params["epsilon"] = self._action_policy_params["epsilon"] / (episode + 1)
+    def calculate_action(self, episode, should_be_greedy):
+        action = 0
+        if should_be_greedy and not self._continuous_environment:
+            # Q is only available for discrete environments
+            Q = self._RL_class_object._Q
+            action = np.argmax(Q[self._current_state])
+        elif should_be_greedy:
+            self._RL_class_object.get_action(self._current_state)
         else:
-            sys.exit("Could not find action policy: %s, exiting..." % self._action_policy)
+            action = self._env.action_space.sample()
+        
+        return action
+                
+    def get_action(self, episode):
+        should_be_greedy = np.random.uniform(low=0, high=1) < 1 - self._action_policy_params["epsilon"]
+        action = self.calculate_action(episode, should_be_greedy)        
+
+        if self._action_policy == "epsilon_greedy_update":
+            self._action_policy_params["epsilon"] = self._action_policy_params["epsilon"] / (episode + 1)
+        elif self._action_policy == "epsilon_greedy_decay":
+            epsilon = self._action_policy_params["epsilon"]
+            eps_decay = self._action_policy_params["eps_decay"] 
+            self._action_policy_params["epsilon"] = max(epsilon * eps_decay, 0.01)
+        else:
+            pass
 
         return action
 
@@ -128,8 +144,11 @@ class GymEnvironment:
         if self._discretisize_state:
             new_state = convert_state_to_discrete(self._env, self._env_params, new_state)
 
+        if self._continuous_environment:
+            self._RL_class_object.save_data_from_action(self._previous_state, action, new_state, reward, done)
+
         self._previous_state = self._current_state
-        self.setCurrentState(new_state)
+        self.set_current_state(new_state)
 
         self._reward_per_episode[episode] += reward
         self._latest_reward = reward

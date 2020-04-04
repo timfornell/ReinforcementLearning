@@ -15,25 +15,76 @@ import torchvision.transforms as T
 class DeepQLearning:
 
     def __init__(self, env, function_params, env_params):
-        self.criterion = torch.nn.MSELoss()
-        state_dim = function_params["state_dim"]
+        self._criterion = torch.nn.MSELoss()
+        state_dim = env.observation_space.shape[0]
+        action_dim = env.action_space.n
         hidden_dim = function_params["hidden_dim"]
-        action_dim = function_params["action_dim"]
-        self.model = torch.nn.Sequential(torch.nn.Linear(state_dim, hidden_dim),
+        self._model = torch.nn.Sequential(torch.nn.Linear(state_dim, hidden_dim),
                                             torch.nn.LeakyReLU(),
                                             torch.nn.Linear(hidden_dim, hidden_dim*2),
                                             torch.nn.LeakyReLU(),
                                             torch.nn.Linear(hidden_dim*2, action_dim))
-                                            
-        self.optimizer = torch.optim.Adam(self.model.parameters(), function_params["alpha"])
+
+        self._alpha = function_params["alpha"]
+        self._gamma = function_params["gamma"]                                          
+        self._optimizer = torch.optim.Adam(self._model.parameters(), self._alpha)
+        self._memory = []
+        self._double = function_params["double"]
+        self._soft = function_params["soft"]
+        self._n_update = function_params["n_update"]
+        self._replay = function_params["replay"]
+        if self._replay:
+            self._replay_size = function_params["replay_size"]
         
-    def run_algorithm(self, reward, action, current_state, previous_state):
+    def run_algorithm(self, reward, action, current_state, previous_state, done):
+        q_values = self.predict(previous_state).tolist()
+
+        if done and not self._replay:
+            q_values[action] = reward
+            # Update network weights
+            self.update(previous_state, q_values)
+        
+        if not done:
+            if self._replay:
+                # Update network weights using replay memory
+                self.replay(self._memory, self._replay_size, self._gamma)
+            else:
+                # Update network weights using the last step only
+                q_values_next = self.predict(current_state)
+                q_values[action] = reward + self._gamma * torch.max(q_values_next).item()
+                self.update(previous_state, q_values)
+    
+    def update(self, previous_state, q_values):
         """Update the weights of the network given a training sample. """
-        y_pred = self.model(torch.Tensor(previous_state))
-        loss = self.criterion(y_pred, Variable(torch.Tensor(y)))
-        self.optimizer.zero_grad()
+        y_pred = self._model(torch.Tensor(previous_state))
+        loss = self._criterion(y_pred, Variable(torch.Tensor(q_values)))
+        self._optimizer.zero_grad()
         loss.backward()
-        self.optimizer.step()
+        self._optimizer.step()
+    
+    def predict(self, current_state):
+        """ Compute Q values for all actions using the DQL. """
+        with torch.no_grad():
+            return self._model(torch.Tensor(current_state))
+
+    def run_prerequisite(self, episode):
+        if self._double and not self._soft:
+            # Update target network every n_update steps
+            if episode % self._n_update == 0:
+                self._model.target_update()
+        if self._double and self._soft:
+            self._model.target_update()
+    
+    def get_action(self, state):
+        q_values = self.predict(state)
+        action = torch.argmax(q_values).item()
+        return action
+
+    def save_data_from_action(self, previous_state, action, new_state, reward, done):
+        self._memory.append((previous_state, action, new_state, reward, done))
+
+    def run_post_episode_updates(self):
+        pass
 
     def update_policy(self, env):
         pass

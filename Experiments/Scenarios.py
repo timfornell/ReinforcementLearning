@@ -1,10 +1,46 @@
 import gym
 import colorama
-import SARSA, QLearning, ExpectedSARSA, BaseEnvironment
+import SARSA, QLearning, ExpectedSARSA, DeepQLearning, BaseEnvironment
 
 # DO NOT REMOVE - Is needed to print lovely colors in bash
 colorama.init()
 
+""" 
+*******************************************************
+                      Deep QLearning
+*******************************************************
+"""
+# CartPole-v1
+def DQN_RunCartPole(load_previous_training, debug):
+    simulation_environment = "CartPole-v1"
+    episodes = 1000
+    max_steps = 100
+
+    action_policy = "epsilon_greedy_decay"
+    epsilon = 0.3
+    alpha = 0.05
+    gamma = 0.9
+
+    env = gym.make(simulation_environment)
+    env_params = {"episodes": episodes, "max_steps": max_steps, "stochastic": False, "continuous_environment": True}
+
+    function_specific_params = {"alpha": alpha, "gamma": gamma, "qInit": "stochastic", "hidden_dim": 64, "double": False,
+                                "soft": False, "n_update": 10, "replay": False, "replay_size": 20}
+    action_policy_params = {"epsilon": epsilon, "eps_decay": 0.99}
+    
+    DeepQLearning_object = DeepQLearning.DeepQLearning(env, function_specific_params, env_params)
+
+    gym_environment = BaseEnvironment.GymEnvironment(env, env_params, DeepQLearning_object, action_policy, action_policy_params, debug)
+
+    gym_environment.train()
+
+    if load_previous_training:
+        gym_environment.evaluate(simulation_environment)
+    else:
+        gym_environment.evaluate()
+
+    gym_environment.plot_results(simulation_environment)
+    
 """ 
 *******************************************************
                       QLearning
