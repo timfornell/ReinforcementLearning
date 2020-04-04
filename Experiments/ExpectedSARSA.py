@@ -4,7 +4,7 @@ import argparse
 import numpy as np
 import BaseEnvironment as gym_env
 
-from discretisizeEnvironments import CONTINUOUS_ENVIRONMENTS
+from discretisizeEnvironments import CONTINUOUS_ENVIRONMENTS_TO_DISCRETISIZE
 
 class ExpectedSARSA:
 

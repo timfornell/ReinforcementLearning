@@ -21,7 +21,7 @@ class QLearning:
         self._Q[previous_state, action] = (1 - self._alpha) * old_value + self._alpha * learned_value
 
     def initialize_environment_dependable_variables(self, env, function_params, env_params):
-        if env.spec.id not in CONTINUOUS_ENVIRONMENTS:
+        if env.spec.id not in CONTINUOUS_ENVIRONMENTS_TO_DISCRETISIZE:
             if function_params["qInit"] is "stochastic":
                 self._Q = np.random.uniform(0, 1, (env.observation_space.n, env.action_space.n))
             else:

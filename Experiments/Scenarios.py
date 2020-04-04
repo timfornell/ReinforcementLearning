@@ -22,7 +22,7 @@ def QLearning_RunCliffWalking(load_previous_training, debug):
     gamma = 0.3
 
     env = gym.make(simulation_environment)
-    env_params = {"episodes": episodes, "max_steps": max_steps, "stochastic": False}
+    env_params = {"episodes": episodes, "max_steps": max_steps, "stochastic": False, "continuous_environment": False}
 
     function_specific_params = {"alpha": alpha, "gamma": gamma, "qInit": "stochastic"}
     action_policy_params = {"epsilon": epsilon}
@@ -52,7 +52,7 @@ def QLearning_RunTaxi(load_previous_training, debug):
     gamma = 0.3
 
     env = gym.make(simulation_environment)
-    env_params = {"episodes": episodes, "max_steps": max_steps, "stochastic": False}
+    env_params = {"episodes": episodes, "max_steps": max_steps, "stochastic": False, "continuous_environment": False}
 
     function_specific_params = {"alpha": alpha, "gamma": gamma, "qInit": "stochastic"}
     action_policy_params = {"epsilon": epsilon}
@@ -84,7 +84,7 @@ def QLearning_RunMountainCar(load_previous_training, debug):
     env = gym.make(simulation_environment)
     # Parameters to use when discretizing the environment
     disc_params = {"resolution": [0.01, 0.01]}
-    env_params = {"episodes": episodes, "max_steps": max_steps, "stochastic": False, "disc_param": disc_params}
+    env_params = {"episodes": episodes, "max_steps": max_steps, "stochastic": False, "continuous_environment": False, "disc_param": disc_params}
 
     function_specific_params = {"alpha": alpha, "gamma": gamma, "qInit": "stochastic"}
     action_policy_params = {"epsilon": epsilon}
@@ -119,7 +119,7 @@ def SARSA_RunCliffWalking(load_previous_training, debug):
     gamma = 0.3
 
     env = gym.make(simulation_environment)
-    env_params = {"episodes": episodes, "max_steps": max_steps, "stochastic": False}
+    env_params = {"episodes": episodes, "max_steps": max_steps, "stochastic": False, "continuous_environment": False}
 
     function_specific_params = {"alpha": alpha, "gamma": gamma, "qInit": "stochastic"}
     action_policy_params = {"epsilon": epsilon}
@@ -154,7 +154,7 @@ def ExpectedSARSA_RunCliffWalking(load_previous_training, debug):
     gamma = 0.9
 
     env = gym.make(simulation_environment)
-    env_params = {"episodes": episodes, "max_steps": max_steps, "stochastic": False}
+    env_params = {"episodes": episodes, "max_steps": max_steps, "stochastic": False, "continuous_environment": False}
 
     function_specific_params = {"alpha": alpha, "gamma": gamma, "qInit": "stochastic"}
     action_policy_params = {"epsilon": epsilon}

@@ -1,6 +1,6 @@
 import numpy as np
 
-CONTINUOUS_ENVIRONMENTS = ["MountainCar-v0"]
+CONTINUOUS_ENVIRONMENTS_TO_DISCRETISIZE = ["MountainCar-v0"]
 
 def discretisize_environment(env, params, stochastic):
     Q_vector = np.array((1,1))
